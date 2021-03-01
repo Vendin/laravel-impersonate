@@ -117,29 +117,24 @@ class ImpersonateManager
      * @param \Illuminate\Contracts\Auth\Authenticatable $from
      * @param \Illuminate\Contracts\Auth\Authenticatable $to
      * @param string|null                         $guardName
-     * @return bool
+     * @return string
      */
-    public function take($from, $to, $guardName = null): bool
+    public function take($from, $to, $guardName = null): string
     {
-        try {
-            $currentGuard = $this->getCurrentAuthGuardName();
-            $this->auth->guard($guardName)->customClaims([
-                $this->getSessionKey() => $from->getKey(),
-                $this->getSessionGuard() => $currentGuard,
-                $this->getSessionGuardUsing() => $guardName,
-                static::REMEMBER_PREFIX => $this->saveAuthCookies(),
-            ]);
+        $currentGuard = $this->getCurrentAuthGuardName();
+        $this->auth->guard($guardName)->customClaims([
+            $this->getSessionKey() => $from->getKey(),
+            $this->getSessionGuard() => $currentGuard,
+            $this->getSessionGuardUsing() => $guardName,
+            static::REMEMBER_PREFIX => $this->saveAuthCookies(),
+        ]);
 
-            $this->token = $this->auth->guard($guardName)->login($to);
-            $this->auth->guard($guardName)->setToken($this->token);
-        } catch (\Exception $e) {
-            unset($e);
-            return false;
-        }
+        $this->token = $this->auth->guard($guardName)->login($to);
+        $this->auth->guard($guardName)->setToken($this->token);
 
         $this->app['events']->dispatch(new TakeImpersonation($from, $to));
 
-        return true;
+        return $this->token;
     }
 
     public function leave(): bool

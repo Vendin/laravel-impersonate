@@ -43,17 +43,13 @@ class ImpersonateController extends Controller
         }
 
         $userToImpersonate = $this->manager->findUserById($id, $guardName);
-
-        if ($userToImpersonate->canBeImpersonated()) {
-            if ($this->manager->take($request->user(), $userToImpersonate, $guardName)) {
-                $takeRedirect = $this->manager->getTakeRedirectTo();
-                if ($takeRedirect !== 'back') {
-                    return redirect()->to($takeRedirect);
-                }
-            }
+        if (!$userToImpersonate->canBeImpersonated()) {
+            abort(403);
         }
 
-        return redirect()->back();
+        return new JsonResource([
+            'token' => $this->manager->take($request->user(), $userToImpersonate, $guardName)
+        ]);
     }
 
     /**
